@@ -115,6 +115,10 @@ impl MilestoneSolidifierWorker {
                 Protocol::trigger_transaction_solidification(target_hash, self.index).await;
             } else {
                 warn!("Milestone {} is already solid", *self.index);
+                Protocol::trigger_milestone_solidification(MilestoneSolidifierCoordinatorEvent::NewSolidMilestone(
+                    self.index,
+                ))
+                .await;
             }
         } else {
             warn!("Cannot solidify missing milestone {}", *self.index);
@@ -194,11 +198,7 @@ impl MilestoneSolidifierCoordinator {
                     if let Some(event) = event {
                         match event {
                             MilestoneSolidifierCoordinatorEvent::NewSolidMilestone(index) => {
-                                let max_index = *self.senders.keys().max().unwrap() + MilestoneIndex(1);
-                                let mut sender = self.senders.remove(&index).unwrap();
-
-                                sender.send(MilestoneSolidifierWorkerEvent::Reassign(max_index));
-                                self.senders.insert(max_index, sender);
+                                self.reassign_worker(index).await;
                             }
                             MilestoneSolidifierCoordinatorEvent::Idle => {
                                 for sender in self.senders.values_mut() {
@@ -214,6 +214,15 @@ impl MilestoneSolidifierCoordinator {
         info!("Stopped.");
 
         Ok(())
+    }
+
+    async fn reassign_worker(&mut self, index: MilestoneIndex) {
+        let max_index = *self.senders.keys().max().unwrap() + MilestoneIndex(1);
+        info!("Reasigining worker {} to {}", *index, *max_index);
+        let mut sender = self.senders.remove(&index).unwrap();
+
+        sender.send(MilestoneSolidifierWorkerEvent::Reassign(max_index)).await;
+        self.senders.insert(max_index, sender);
     }
 }
 
