@@ -200,7 +200,7 @@ impl Protocol {
 
         let mut senders = std::collections::HashMap::new();
         let index = tangle().get_last_solid_milestone_index();
-        for i in 0..5 {
+        for i in 0..25 {
             let i = index + MilestoneIndex(i);
 
             let (milestone_solidifier_worker_tx, milestone_solidifier_worker_rx) = mpsc::channel(9999);

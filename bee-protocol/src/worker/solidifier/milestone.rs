@@ -175,7 +175,7 @@ impl MilestoneSolidifierCoordinator {
     fn request_milestones(&self) {
         let min_index = *self.senders.keys().min().unwrap();
 
-        for i in 0..10 {
+        for i in 0..50 {
             let index = min_index + MilestoneIndex(i);
             if !tangle().contains_milestone(index) {
                 Protocol::request_milestone(index, None);
