@@ -8,6 +8,7 @@
 // Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
 // an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and limitations under the License.
+use std::collections::HashMap;
 
 use crate::{milestone::MilestoneIndex, protocol::Protocol, tangle::tangle};
 
@@ -18,6 +19,7 @@ use futures::{
     future::FutureExt,
     select,
     stream::StreamExt,
+    SinkExt,
 };
 
 use log::{info, warn};
@@ -25,18 +27,18 @@ use log::{info, warn};
 const MILESTONE_REQUEST_RANGE: u32 = 5;
 
 pub(crate) enum MilestoneSolidifierWorkerEvent {
-    Solidified(u32),
+    Reassign(MilestoneIndex),
     Idle,
 }
 
 pub(crate) struct MilestoneSolidifierWorker {
-    index: u32,
+    index: MilestoneIndex,
 }
 
 impl MilestoneSolidifierWorker {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(index: u32) -> Self {
         Self {
-            index: *tangle().get_last_solid_milestone_index(),
+            index: MilestoneIndex(index),
         }
     }
 
@@ -89,16 +91,12 @@ impl MilestoneSolidifierWorker {
 
     fn request_milestones(&self) {
         // TODO this may request unpublished milestones
-        for offset in 1..MILESTONE_REQUEST_RANGE {
-            let index = (self.index + offset).into();
-            if !tangle().contains_milestone(index) {
-                Protocol::request_milestone(index, None);
-            }
+        if !tangle().contains_milestone(self.index) {
+            Protocol::request_milestone(self.index, None);
         }
     }
 
-    async fn solidify_milestone(&self, offset: u32) {
-        let target_index = (self.index + offset).into();
+    async fn solidify_milestone(&self) {
         // if let Some(target_hash) = tangle().get_milestone_hash(target_index) {
         //     if tangle().is_solid_transaction(&target_hash) {
         //         // TODO set confirmation index + trigger ledger
@@ -112,14 +110,14 @@ impl MilestoneSolidifierWorker {
         //         Protocol::trigger_transaction_solidification(target_hash, target_index).await;
         //     }
         // }
-        if let Some(target_hash) = tangle().get_milestone_hash(target_index) {
+        if let Some(target_hash) = tangle().get_milestone_hash(self.index) {
             if !tangle().is_solid_transaction(&target_hash) {
-                Protocol::trigger_transaction_solidification(target_hash, target_index).await;
+                Protocol::trigger_transaction_solidification(target_hash, self.index).await;
             } else {
-                warn!("Milestone {} is already solid", *target_index);
+                warn!("Milestone {} is already solid", *self.index);
             }
         } else {
-            warn!("Cannot solidify missing milestone {}", *target_index);
+            warn!("Cannot solidify missing milestone {}", *self.index);
         }
     }
 
@@ -139,18 +137,14 @@ impl MilestoneSolidifierWorker {
                 event = receiver_fused.next() => {
                     if let Some(event) = event {
                         match event {
-                            MilestoneSolidifierWorkerEvent::Solidified(index) => {
+                            MilestoneSolidifierWorkerEvent::Reassign(index) => {
                                 self.index = index;
                                 self.request_milestones();
-                                for i in 1..MILESTONE_REQUEST_RANGE {
-                                    self.solidify_milestone(i).await;
-                                }
+                                self.solidify_milestone().await;
                             }
                             MilestoneSolidifierWorkerEvent::Idle => {
                                 self.request_milestones();
-                                for i in 1..MILESTONE_REQUEST_RANGE {
-                                    self.solidify_milestone(i).await;
-                                }
+                                self.solidify_milestone().await;
                             }
                         }
                         // while tangle().get_last_solid_milestone_index() < tangle().get_last_milestone_index() {
@@ -158,6 +152,60 @@ impl MilestoneSolidifierWorker {
                         //         break;
                         //     }
                         // }
+                    }
+                }
+            }
+        }
+
+        info!("Stopped.");
+
+        Ok(())
+    }
+}
+
+pub enum MilestoneSolidifierCoordinatorEvent {
+    NewSolidMilestone(MilestoneIndex),
+    Idle,
+}
+
+pub(crate) struct MilestoneSolidifierCoordinator {
+    senders: HashMap<MilestoneIndex, mpsc::Sender<MilestoneSolidifierWorkerEvent>>,
+}
+
+impl MilestoneSolidifierCoordinator {
+    pub(crate) fn new(senders: HashMap<MilestoneIndex, mpsc::Sender<MilestoneSolidifierWorkerEvent>>) -> Self {
+        Self { senders }
+    }
+
+    pub(crate) async fn run(
+        mut self,
+        receiver: mpsc::Receiver<MilestoneSolidifierCoordinatorEvent>,
+        shutdown: oneshot::Receiver<()>,
+    ) -> Result<(), WorkerError> {
+        info!("Running.");
+
+        let mut receiver_fused = receiver.fuse();
+        let mut shutdown_fused = shutdown.fuse();
+
+        loop {
+            select! {
+                _ = shutdown_fused => break,
+                event = receiver_fused.next() => {
+                    if let Some(event) = event {
+                        match event {
+                            MilestoneSolidifierCoordinatorEvent::NewSolidMilestone(index) => {
+                                let max_index = *self.senders.keys().max().unwrap() + MilestoneIndex(1);
+                                let mut sender = self.senders.remove(&index).unwrap();
+
+                                sender.send(MilestoneSolidifierWorkerEvent::Reassign(max_index));
+                                self.senders.insert(max_index, sender);
+                            }
+                            MilestoneSolidifierCoordinatorEvent::Idle => {
+                                for sender in self.senders.values_mut() {
+                                    sender.send(MilestoneSolidifierWorkerEvent::Idle).await;
+                                }
+                            }
+                        }
                     }
                 }
             }

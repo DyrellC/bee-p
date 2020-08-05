@@ -13,7 +13,7 @@ use crate::{
     message::{uncompress_transaction_bytes, Transaction as TransactionMessage},
     protocol::Protocol,
     tangle::{tangle, TransactionMetadata},
-    worker::transaction::HashCache,
+    worker::{transaction::HashCache, MilestoneSolidifierCoordinatorEvent},
 };
 
 use bee_common::worker::Error as WorkerError;
@@ -134,7 +134,7 @@ impl TransactionWorker {
             Protocol::get().metrics.new_transactions_received_inc();
 
             if !tangle().is_synced() && Protocol::get().requested.is_empty() {
-                Protocol::trigger_milestone_solidification().await;
+                Protocol::trigger_milestone_solidification(MilestoneSolidifierCoordinatorEvent::Idle).await;
             }
 
             match Protocol::get().requested.remove(&hash) {

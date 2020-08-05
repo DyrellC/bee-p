@@ -33,8 +33,8 @@ pub(crate) use responder::{
 };
 pub(crate) use sender::SenderWorker;
 pub(crate) use solidifier::{
-    MilestoneSolidifierWorker, MilestoneSolidifierWorkerEvent, TransactionSolidifierWorker,
-    TransactionSolidifierWorkerEvent,
+    MilestoneSolidifierCoordinator, MilestoneSolidifierCoordinatorEvent, MilestoneSolidifierWorker,
+    TransactionSolidifierWorker, TransactionSolidifierWorkerEvent,
 };
 pub(crate) use status::StatusWorker;
 pub(crate) use tps::TpsWorker;
