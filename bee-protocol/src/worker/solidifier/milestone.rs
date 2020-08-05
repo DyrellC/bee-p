@@ -22,15 +22,22 @@ use futures::{
 
 use log::{info, warn};
 
-const MILESTONE_REQUEST_RANGE: u32 = 50;
+const MILESTONE_REQUEST_RANGE: u32 = 5;
 
-pub(crate) struct MilestoneSolidifierWorkerEvent();
+pub(crate) enum MilestoneSolidifierWorkerEvent {
+    Solidified(u32),
+    Idle,
+}
 
-pub(crate) struct MilestoneSolidifierWorker {}
+pub(crate) struct MilestoneSolidifierWorker {
+    index: u32,
+}
 
 impl MilestoneSolidifierWorker {
     pub(crate) fn new() -> Self {
-        Self {}
+        Self {
+            index: *tangle().get_last_solid_milestone_index(),
+        }
     }
 
     // async fn solidify(&self, hash: Hash, target_index: u32) -> bool {
@@ -81,11 +88,9 @@ impl MilestoneSolidifierWorker {
     // }
 
     fn request_milestones(&self) {
-        let solid_milestone_index = *tangle().get_last_solid_milestone_index();
-
         // TODO this may request unpublished milestones
-        for index in solid_milestone_index..solid_milestone_index + MILESTONE_REQUEST_RANGE as u32 {
-            let index = index.into();
+        for offset in 1..MILESTONE_REQUEST_RANGE {
+            let index = (self.index + offset).into();
             if !tangle().contains_milestone(index) {
                 Protocol::request_milestone(index, None);
             }
@@ -93,7 +98,7 @@ impl MilestoneSolidifierWorker {
     }
 
     async fn solidify_milestone(&self, offset: u32) {
-        let target_index = tangle().get_last_solid_milestone_index() + MilestoneIndex(offset);
+        let target_index = (self.index + offset).into();
         // if let Some(target_hash) = tangle().get_milestone_hash(target_index) {
         //     if tangle().is_solid_transaction(&target_hash) {
         //         // TODO set confirmation index + trigger ledger
@@ -119,7 +124,7 @@ impl MilestoneSolidifierWorker {
     }
 
     pub(crate) async fn run(
-        self,
+        mut self,
         receiver: mpsc::Receiver<MilestoneSolidifierWorkerEvent>,
         shutdown: oneshot::Receiver<()>,
     ) -> Result<(), WorkerError> {
@@ -132,10 +137,21 @@ impl MilestoneSolidifierWorker {
             select! {
                 _ = shutdown_fused => break,
                 event = receiver_fused.next() => {
-                    if let Some(MilestoneSolidifierWorkerEvent()) = event {
-                        self.request_milestones();
-                        for i in 1..MILESTONE_REQUEST_RANGE {
-                            self.solidify_milestone(i).await;
+                    if let Some(event) = event {
+                        match event {
+                            MilestoneSolidifierWorkerEvent::Solidified(index) => {
+                                self.index = index;
+                                self.request_milestones();
+                                for i in 1..MILESTONE_REQUEST_RANGE {
+                                    self.solidify_milestone(i).await;
+                                }
+                            }
+                            MilestoneSolidifierWorkerEvent::Idle => {
+                                self.request_milestones();
+                                for i in 1..MILESTONE_REQUEST_RANGE {
+                                    self.solidify_milestone(i).await;
+                                }
+                            }
                         }
                         // while tangle().get_last_solid_milestone_index() < tangle().get_last_milestone_index() {
                         //     if !self.process_target(*tangle().get_last_solid_milestone_index() + 1).await {
