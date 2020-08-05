@@ -27,7 +27,7 @@ use crate::{
 };
 
 use bee_common::shutdown::Shutdown;
-use bee_common_ext::{wait_priority_queue::WaitPriorityQueue, event::Bus};
+use bee_common_ext::{event::Bus, wait_priority_queue::WaitPriorityQueue};
 use bee_crypto::ternary::{
     sponge::{CurlP27, CurlP81, Kerl, SpongeKind},
     Hash,
@@ -251,11 +251,16 @@ impl Protocol {
 
 fn handle_last_milestone(last_milestone: &LastMilestone) {
     info!("New milestone #{}.", *last_milestone.0.index);
+    block_on(Protocol::trigger_milestone_solidification());
     tangle().update_last_milestone_index(last_milestone.0.index);
 }
 
 fn handle_last_solid_milestone(last_solid_milestone: &LastSolidMilestone) {
-    info!("Handle last solid milestone: {}", *last_solid_milestone.0.index);
+    info!(
+        "last solid milestone has been updated to #{}",
+        *last_solid_milestone.0.index
+    );
+    block_on(Protocol::trigger_milestone_solidification());
     tangle().update_last_solid_milestone_index(last_solid_milestone.0.index);
     // TODO block_on ?
     block_on(Protocol::broadcast_heartbeat(
