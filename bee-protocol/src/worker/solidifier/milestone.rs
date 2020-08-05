@@ -22,7 +22,7 @@ use futures::{
 
 use log::{info, warn};
 
-const MILESTONE_REQUEST_RANGE: u8 = 50;
+const MILESTONE_REQUEST_RANGE: u32 = 50;
 
 pub(crate) struct MilestoneSolidifierWorkerEvent();
 
@@ -92,8 +92,8 @@ impl MilestoneSolidifierWorker {
         }
     }
 
-    async fn solidify_milestone(&self) {
-        let target_index = tangle().get_last_solid_milestone_index() + MilestoneIndex(1);
+    async fn solidify_milestone(&self, offset: u32) {
+        let target_index = tangle().get_last_solid_milestone_index() + MilestoneIndex(offset);
         // if let Some(target_hash) = tangle().get_milestone_hash(target_index) {
         //     if tangle().is_solid_transaction(&target_hash) {
         //         // TODO set confirmation index + trigger ledger
@@ -134,7 +134,9 @@ impl MilestoneSolidifierWorker {
                 event = receiver_fused.next() => {
                     if let Some(MilestoneSolidifierWorkerEvent()) = event {
                         self.request_milestones();
-                        self.solidify_milestone().await;
+                        for i in 1..MILESTONE_REQUEST_RANGE {
+                            self.solidify_milestone(i).await;
+                        }
                         // while tangle().get_last_solid_milestone_index() < tangle().get_last_milestone_index() {
                         //     if !self.process_target(*tangle().get_last_solid_milestone_index() + 1).await {
                         //         break;
