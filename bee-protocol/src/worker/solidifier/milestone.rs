@@ -19,7 +19,8 @@ use futures::{
     select,
     stream::StreamExt,
 };
-use log::info;
+
+use log::{info, warn};
 
 const MILESTONE_REQUEST_RANGE: u8 = 50;
 
@@ -93,7 +94,7 @@ impl MilestoneSolidifierWorker {
 
     async fn solidify_milestone(&self) {
         let target_index = tangle().get_last_solid_milestone_index() + MilestoneIndex(1);
-
+        info!("Request to solidify milestone {} was made", *target_index);
         // if let Some(target_hash) = tangle().get_milestone_hash(target_index) {
         //     if tangle().is_solid_transaction(&target_hash) {
         //         // TODO set confirmation index + trigger ledger
@@ -110,7 +111,11 @@ impl MilestoneSolidifierWorker {
         if let Some(target_hash) = tangle().get_milestone_hash(target_index) {
             if !tangle().is_solid_transaction(&target_hash) {
                 Protocol::trigger_transaction_solidification(target_hash, target_index).await;
+            } else {
+                warn!("Milestone {} is already solid", *target_index);
             }
+        } else {
+            warn!("Cannot solidify missing milestone {}", *target_index);
         }
     }
 
