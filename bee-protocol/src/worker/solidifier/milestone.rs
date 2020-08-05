@@ -218,11 +218,13 @@ impl MilestoneSolidifierCoordinator {
 
     async fn reassign_worker(&mut self, index: MilestoneIndex) {
         let max_index = *self.senders.keys().max().unwrap() + MilestoneIndex(1);
-        info!("Reasigining worker {} to {}", *index, *max_index);
-        let mut sender = self.senders.remove(&index).unwrap();
-
-        sender.send(MilestoneSolidifierWorkerEvent::Reassign(max_index)).await;
-        self.senders.insert(max_index, sender);
+        if let Some(mut sender) = self.senders.remove(&index) {
+            info!("Reasigining worker {} to {}", *index, *max_index);
+            sender.send(MilestoneSolidifierWorkerEvent::Reassign(max_index)).await;
+            self.senders.insert(max_index, sender);
+        } else {
+            warn!("No worker assigned to {}", *index);
+        }
     }
 }
 
