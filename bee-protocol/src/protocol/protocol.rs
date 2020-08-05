@@ -255,6 +255,7 @@ fn handle_last_milestone(last_milestone: &LastMilestone) {
 }
 
 fn handle_last_solid_milestone(last_solid_milestone: &LastSolidMilestone) {
+    info!("Handle last solid milestone: {}", *last_solid_milestone.0.index);
     tangle().update_last_solid_milestone_index(last_solid_milestone.0.index);
     // TODO block_on ?
     block_on(Protocol::broadcast_heartbeat(
