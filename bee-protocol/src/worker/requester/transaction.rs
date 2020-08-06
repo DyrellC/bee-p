@@ -19,7 +19,7 @@ use bee_ternary::T5B1Buf;
 
 use bytemuck::cast_slice;
 use futures::{channel::oneshot, future::FutureExt, select};
-use log::info;
+use log::{info, warn};
 
 use std::cmp::Ordering;
 
@@ -55,6 +55,8 @@ impl TransactionRequesterWorker {
         if Protocol::get().peer_manager.handshaked_peers.is_empty() {
             return;
         }
+
+        warn!("Transaction {} with milestone {} is being requested", hash, *index);
 
         Protocol::get().requested.insert(hash, index);
 
