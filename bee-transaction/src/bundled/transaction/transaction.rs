@@ -172,6 +172,49 @@ impl BundledTransaction {
         copy_slice(ATTACHMENT_UBTS, &attachment_ubts_buf);
     }
 
+    pub fn essence(&self) -> TritBuf {
+        let mut essence = TritBuf::<T1B1Buf>::zeros(
+            ADDRESS.trit_offset.length
+                + VALUE.trit_offset.length
+                + OBSOLETE_TAG.trit_offset.length
+                + TIMESTAMP.trit_offset.length
+                + INDEX.trit_offset.length
+                + LAST_INDEX.trit_offset.length,
+        );
+        let address = self.address.clone();
+        let value = TritBuf::<T1B1Buf<_>>::from(*self.value.to_inner());
+        let obsolete_tag = self.obsolete_tag.clone();
+        let timestamp = TritBuf::<T1B1Buf<_>>::from(*self.timestamp.to_inner() as i128);
+        let index = TritBuf::<T1B1Buf<_>>::from(*self.index.to_inner() as i128);
+        let last_index = TritBuf::<T1B1Buf<_>>::from(*self.last_index.to_inner() as i128);
+
+        let mut start = 0;
+        let mut end = ADDRESS.trit_offset.length;
+        essence[start..end].copy_from(address.to_inner());
+
+        start += ADDRESS.trit_offset.length;
+        end = start + value.len();
+        essence[start..end].copy_from(&value);
+
+        start += VALUE.trit_offset.length;
+        end = start + OBSOLETE_TAG.trit_offset.length;
+        essence[start..end].copy_from(obsolete_tag.to_inner());
+
+        start += OBSOLETE_TAG.trit_offset.length;
+        end = start + timestamp.len();
+        essence[start..end].copy_from(&timestamp);
+
+        start += TIMESTAMP.trit_offset.length;
+        end = start + index.len();
+        essence[start..end].copy_from(&index);
+
+        start += INDEX.trit_offset.length;
+        end = start + last_index.len();
+        essence[start..end].copy_from(&last_index);
+
+        essence
+    }
+
     pub fn payload(&self) -> &Payload {
         &self.payload
     }
