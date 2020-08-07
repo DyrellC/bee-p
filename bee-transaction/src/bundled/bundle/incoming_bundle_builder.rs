@@ -14,9 +14,9 @@ use crate::{
     Vertex,
 };
 
-use bee_crypto::ternary::sponge::{Kerl, Sponge};
+use bee_crypto::ternary::sponge::{Kerl, Sponge, Hash};
 use bee_signing::ternary::{wots::WotsPublicKey, PublicKey, Signature};
-use bee_ternary::{T1B1Buf, TritBuf};
+use bee_ternary::{T1B1Buf, TritBuf, Btrit};
 
 use std::marker::PhantomData;
 
@@ -74,13 +74,14 @@ where
         // TODO Impl
         let mut sponge = E::default();
 
-        for _builder in &self.transactions.0 {
-            // sponge.absorb(builder.address.0);
+        for builder in &self.builders.0 {
+            let _ = sponge.absorb(&builder.essence());
         }
 
-        sponge
-            .squeeze()
-            .unwrap_or_else(|_| panic!("Panicked when unwrapping the sponge hash function."))
+            // TODO squeeze into
+            sponge
+                .squeeze()
+                .unwrap_or_else(|_| panic!("Panicked when unwrapping the sponge hash function."))?
     }
 
     fn validate_signatures(&self) -> Result<(), IncomingBundleBuilderError> {
