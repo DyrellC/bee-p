@@ -94,6 +94,8 @@ where
         for x in 0..243 {
             empty_trits.push(Trit::zero())
         }
+
+        println!("Empty trits length: {}", empty_trits.len());
         let public_key = match P::from_trits(empty_trits.clone()) {
             Ok(pk) => pk,
             Err(_) => {println!("public key error"); unreachable!()},
