@@ -112,15 +112,21 @@ where
         };
 
         // TODO Temporary buffer
-        match public_key.verify(&TritBuf::<T1B1Buf>::zeros(1), &signature) {
+        let mut sig_buf = TritBuf::<T1B1Buf>::new();
+        sig_buf.push(Trit::zero());
+        match public_key.verify(&sig_buf, &signature) {
             Ok(valid) => {
                 if valid {
                     Ok(())
                 } else {
+                    println!("Is not valid");
                     Err(IncomingBundleBuilderError::InvalidSignature)
                 }
             }
-            Err(_) => Err(IncomingBundleBuilderError::InvalidSignature),
+            Err(_) => {
+                println!("Issue with the sig_buf");
+                Err(IncomingBundleBuilderError::InvalidSignature)
+            },
         }
     }
 
