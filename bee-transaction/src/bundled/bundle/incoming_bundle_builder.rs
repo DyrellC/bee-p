@@ -100,6 +100,12 @@ where
             Ok(pk) => pk,
             Err(_) => {println!("public key error"); unreachable!()},
         };
+
+        for _ in 243..6561 {
+            empty_trits.push(Trit::zero())
+        }
+        println!("Empty trits length: {}", empty_trits.len());
+
         let signature = match P::Signature::from_trits(empty_trits) {
             Ok(sig) => sig,
             Err(_) => {println!("signature error"); unreachable!()},
