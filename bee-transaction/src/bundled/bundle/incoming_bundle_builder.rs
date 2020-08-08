@@ -19,7 +19,7 @@ use bee_crypto::ternary::{
     Hash,
 };
 use bee_signing::ternary::{wots::WotsPublicKey, PublicKey, Signature};
-use bee_ternary::{T1B1Buf, TritBuf, Btrit};
+use bee_ternary::{T1B1Buf, TritBuf, Btrit, Trit};
 
 use std::marker::PhantomData;
 
@@ -90,11 +90,15 @@ where
     fn validate_signatures(&self) -> Result<(), IncomingBundleBuilderError> {
         // TODO no bundle should be considered valid if it contains more than MaxSecLevel transactions belonging to the
         // input address with a value != 0 (actually < 0) TODO get real values
-        let public_key = match P::from_trits(TritBuf::new()) {
+        let mut empty_trits = TritBuf::<T1B1Buf>::new();
+        for x in 0..243 {
+            empty_trits.push(Trit::zero())
+        }
+        let public_key = match P::from_trits(empty_trits.clone()) {
             Ok(pk) => pk,
             Err(_) => {println!("public key error"); unreachable!()},
         };
-        let signature = match P::Signature::from_trits(TritBuf::new()) {
+        let signature = match P::Signature::from_trits(empty_trits) {
             Ok(sig) => sig,
             Err(_) => {println!("signature error"); unreachable!()},
         };
