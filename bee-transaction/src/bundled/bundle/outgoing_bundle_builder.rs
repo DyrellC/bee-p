@@ -27,6 +27,7 @@ use bee_signing::ternary::{
 use bee_ternary::Btrit;
 
 use std::marker::PhantomData;
+use std::convert::TryInto;
 
 #[derive(Debug)]
 pub enum OutgoingBundleBuilderError {
