@@ -106,6 +106,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bee-common-derive"
+version = "0.1.1-alpha"
+source = "git+https://github.com/DyrellC/bee.git?branch=downgrade-rand#be9a349233baf2daff36921862a4d984fef6ac01"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "bee-common-ext"
 version = "0.1.0-alpha"
 dependencies = [
@@ -124,7 +133,19 @@ name = "bee-crypto"
 version = "0.2.0-alpha"
 source = "git+https://github.com/iotaledger/bee.git?branch=dev#a9da28d27c34309aeee6f7c5affff3ea16679b8f"
 dependencies = [
- "bee-ternary",
+ "bee-ternary 0.3.2-alpha",
+ "byteorder",
+ "lazy_static",
+ "thiserror",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "bee-crypto"
+version = "0.2.0-alpha"
+source = "git+https://github.com/DyrellC/bee.git?branch=downgrade-rand#be9a349233baf2daff36921862a4d984fef6ac01"
+dependencies = [
+ "bee-ternary 0.4.0-alpha",
  "byteorder",
  "lazy_static",
  "thiserror",
@@ -138,11 +159,11 @@ dependencies = [
  "async-trait",
  "bee-common",
  "bee-common-ext",
- "bee-crypto",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
  "bee-protocol",
  "bee-storage",
  "bee-tangle",
- "bee-ternary",
+ "bee-ternary 0.3.2-alpha",
  "bee-test",
  "bee-transaction",
  "blake2",
@@ -162,7 +183,7 @@ version = "0.1.0-alpha"
 dependencies = [
  "bech32",
  "bee-common-ext",
- "bee-ternary",
+ "bee-ternary 0.3.2-alpha",
  "bytemuck",
  "hex",
  "serde",
@@ -196,7 +217,7 @@ dependencies = [
  "async-trait",
  "bee-common",
  "bee-common-ext",
- "bee-crypto",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
  "bee-ledger",
  "bee-network",
  "bee-peering",
@@ -241,13 +262,13 @@ dependencies = [
  "async-trait",
  "bee-common",
  "bee-common-ext",
- "bee-crypto",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
  "bee-network",
- "bee-signing",
+ "bee-signing 0.1.1-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
  "bee-snapshot",
  "bee-storage",
  "bee-tangle",
- "bee-ternary",
+ "bee-ternary 0.3.2-alpha",
  "bee-transaction",
  "bitflags",
  "bytemuck",
@@ -269,9 +290,23 @@ name = "bee-signing"
 version = "0.1.1-alpha"
 source = "git+https://github.com/iotaledger/bee.git?branch=dev#a9da28d27c34309aeee6f7c5affff3ea16679b8f"
 dependencies = [
- "bee-common-derive",
- "bee-crypto",
- "bee-ternary",
+ "bee-common-derive 0.1.1-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
+ "bee-ternary 0.3.2-alpha",
+ "rand",
+ "sha3",
+ "thiserror",
+ "zeroize",
+]
+
+[[package]]
+name = "bee-signing"
+version = "0.1.1-alpha"
+source = "git+https://github.com/DyrellC/bee.git?branch=downgrade-rand#be9a349233baf2daff36921862a4d984fef6ac01"
+dependencies = [
+ "bee-common-derive 0.1.1-alpha (git+https://github.com/DyrellC/bee.git?branch=downgrade-rand)",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/DyrellC/bee.git?branch=downgrade-rand)",
+ "bee-ternary 0.4.0-alpha",
  "rand",
  "sha3",
  "thiserror",
@@ -285,9 +320,9 @@ dependencies = [
  "async-trait",
  "bee-common",
  "bee-common-ext",
- "bee-crypto",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
  "bee-storage",
- "bee-ternary",
+ "bee-ternary 0.3.2-alpha",
  "bee-transaction",
  "bytemuck",
  "chrono",
@@ -312,11 +347,11 @@ name = "bee-storage-rocksdb"
 version = "0.1.0-alpha"
 dependencies = [
  "async-trait",
- "bee-crypto",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
  "bee-ledger",
  "bee-protocol",
  "bee-storage",
- "bee-ternary",
+ "bee-ternary 0.3.2-alpha",
  "bee-transaction",
  "rocksdb",
  "serde",
@@ -327,7 +362,7 @@ name = "bee-tangle"
 version = "0.1.0-alpha"
 dependencies = [
  "async-trait",
- "bee-crypto",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
  "bee-test",
  "bee-transaction",
  "criterion",
@@ -347,15 +382,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bee-ternary"
+version = "0.4.0-alpha"
+source = "git+https://github.com/DyrellC/bee.git?branch=downgrade-rand#be9a349233baf2daff36921862a4d984fef6ac01"
+dependencies = [
+ "autocfg",
+ "num-traits",
+ "serde",
+]
+
+[[package]]
 name = "bee-test"
 version = "0.1.0-alpha"
 dependencies = [
- "bee-crypto",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/iotaledger/bee.git?branch=dev)",
  "bee-ledger",
  "bee-protocol",
  "bee-storage",
  "bee-storage-rocksdb",
- "bee-ternary",
+ "bee-ternary 0.3.2-alpha",
  "bee-transaction",
  "futures",
  "num_cpus",
@@ -368,9 +413,9 @@ dependencies = [
 name = "bee-transaction"
 version = "0.1.0-alpha"
 dependencies = [
- "bee-crypto",
- "bee-signing",
- "bee-ternary",
+ "bee-crypto 0.2.0-alpha (git+https://github.com/DyrellC/bee.git?branch=downgrade-rand)",
+ "bee-signing 0.1.1-alpha (git+https://github.com/DyrellC/bee.git?branch=downgrade-rand)",
+ "bee-ternary 0.4.0-alpha",
  "serde",
  "thiserror",
 ]
